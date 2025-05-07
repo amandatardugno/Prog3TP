@@ -82,10 +82,77 @@ class HillClimbing(LocalSearch):
 class HillClimbingReset(LocalSearch):
     """Algoritmo de ascension de colinas con reinicio aleatorio."""
 
-    # COMPLETAR
+    def solve(self, problem: OptProblem):
+        """Resuelve un problema de optimizacion con ascension de colinas y reinicio aleatorio."""
 
+        start = time()
+        best_solution = None
+        best_value = float('-inf')
+
+        for _ in range(10):  #Aca indicamos la cantidad de reinicios
+            actual = problem.random_reset()
+            value = problem.obj_val(actual)
+
+            while True:
+                act, succ_val = problem.max_action(actual)
+
+                if succ_val <= value:
+                    break
+
+                actual = problem.result(actual, act)
+                value = succ_val
+                self.niters += 1
+
+            if value > best_value:
+                best_solution = actual
+                best_value = value
+
+        self.tour = best_solution
+        self.value = best_value
+        self.time = time() - start
+
+
+from collections import deque
 
 class Tabu(LocalSearch):
-    """Algoritmo de busqueda tabu."""
+    """Algoritmo de búsqueda tabú."""
 
-    # COMPLETAR
+    def solve(self, problem: OptProblem):
+        """Resuelve un problema de optimización con búsqueda tabú."""
+
+        start = time()
+        actual = problem.init
+        mejor = actual
+        valor_mejor = problem.obj_val(mejor)
+
+        tabu = deque([], maxlen=5)
+
+        for _ in range(100):  #El criterio de parada es un nro fijo de iteraciones
+            acciones = problem.actions(actual)
+            mejor_accion = None
+            mejor_valor = float('-inf')
+
+            for accion in acciones:
+                if accion not in tabu:
+                    sucesor = problem.result(actual, accion)
+                    val = problem.obj_val(sucesor)
+                    if val > mejor_valor:
+                        mejor_valor = val
+                        mejor_accion = accion
+
+            if mejor_accion is None:
+                break
+
+            sucesor = problem.result(actual, mejor_accion)
+            tabu.append(mejor_accion)
+
+            if problem.obj_val(sucesor) > valor_mejor:
+                mejor = sucesor
+                valor_mejor = problem.obj_val(sucesor)
+
+            actual = sucesor
+            self.niters += 1
+
+        self.tour = mejor
+        self.value = valor_mejor
+        self.time = time() - start
